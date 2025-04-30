@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>16x16 Hexadoku Solver & Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      color: #333;
+    }
+
+    .board-wrapper {
+      overflow-x: auto;
+      max-width: 100%;
+      margin: 0 auto 20px;
+    }
+
+    table {
+      border-collapse: collapse;
+      margin: 0 auto;
+    }
+
+    td {
+      border: 1px solid #aaa;
+      width: 35px;
+      height: 35px;
+      text-align: center;
+      padding: 0;
+    }
+
+    td:nth-child(4n) {
+      border-right: 2px solid black;
+    }
+
+    tr:nth-child(4n) td {
+      border-bottom: 2px solid black;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      height: 100%;
+      font-size: 16px;
+      text-align: center;
+      border: none;
+      outline: none;
+      text-transform: uppercase;
+    }
+
+    input:focus {
+      background-color: #e0f7fa;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      margin: 10px 5px;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+      background-color: #0077cc;
+      color: white;
+      border-radius: 5px;
+    }
+
+    .btn:hover {
+      background-color: #005fa3;
+    }
+
+    .generated-cell {
+      color: #0077cc;
+      font-weight: bold;
+      background-color: #eef6ff;
+    }
+
+    @media (max-width: 768px) {
+      td {
+        width: 25px;
+        height: 25px;
+      }
+      input[type="text"] {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>16x16 Sudoku Solver & Generator</h1>
+  
+  <div class="board-wrapper">
+    <table id="sudoku-board"></table>
+  </div>
+
+  <div style="margin-bottom: 20px;">
+    <label for="difficulty"><strong>Difficulty:</strong></label>
+    <select id="difficulty" class="btn" style="width: auto;">
+      <option value="easy">Easy</option>
+      <option value="medium">Medium</option>
+      <option value="hard">Hard</option>
+    </select>
+    <button class="btn" onclick="solveSudoku()">Solve</button>
+    <button class="btn" onclick="generateSudoku()">Generate</button>
+    <button class="btn" onclick="clearGrid()">Clear</button>
+  </div>
+
+  <script>
+    const SIZE = 16;
+    const BOX_SIZE = 4;
+    const SYMBOLS = '123456789ABCDEFG'.split('');
+
+    function createSudokuGrid() {
+      const table = document.getElementById('sudoku-board');
+      table.innerHTML = '';
+      for (let row = 0; row < SIZE; row++) {
+        const tr = document.createElement('tr');
+        for (let col = 0; col < SIZE; col++) {
+          const td = document.createElement('td');
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.maxLength = 1;
+          input.id = `cell-${row}-${col}`;
+          input.oninput = (e) => {
+            let val = e.target.value.toUpperCase();
+            if (!SYMBOLS.includes(val)) e.target.value = '';
+            else e.target.value = val;
+          };
+          td.appendChild(input);
+          tr.appendChild(td);
+        }
+        table.appendChild(tr);
+      }
+    }
+
+    function getBoard() {
+      let board = Array.from({ length: SIZE }, () => Array(SIZE).fill('.'));
+      for (let i = 0; i < SIZE; i++) {
+        for (let j = 0; j < SIZE; j++) {
+          const val = document.getElementById(`cell-${i}-${j}`).value;
+          board[i][j] = val === '' ? '.' : val;
+        }
+      }
+      return board;
+    }
+
+    function setBoard(board, generated = false) {
+      for (let i = 0; i < SIZE; i++) {
+        for (let j = 0; j < SIZE; j++) {
+          const cell = document.getElementById(`cell-${i}-${j}`);
+          if (board[i][j] === '.') {
+            cell.value = '';
+            cell.classList.remove("generated-cell");
+            cell.disabled = false;
+          } else {
+            cell.value = board[i][j];
+            cell.classList.toggle("generated-cell", generated);
+            cell.disabled = generated;
+          }
+        }
+      }
+    }
+
+    function isValid(board, row, col, ch) {
+      for (let i = 0; i < SIZE; i++) {
+        if (board[row][i] === ch || board[i][col] === ch)
+          return false;
+      }
+      const startRow = Math.floor(row / BOX_SIZE) * BOX_SIZE;
+      const startCol = Math.floor(col / BOX_SIZE) * BOX_SIZE;
+      for (let i = 0; i < BOX_SIZE; i++) {
+        for (let j = 0; j < BOX_SIZE; j++) {
+          if (board[startRow + i][startCol + j] === ch)
+            return false;
+        }
+      }
+      return true;
+    }
+
+    function solve(board) {
+      for (let row = 0; row < SIZE; row++) {
+        for (let col = 0; col < SIZE; col++) {
+          if (board[row][col] === '.') {
+            for (let ch of SYMBOLS) {
+              if (isValid(board, row, col, ch)) {
+                board[row][col] = ch;
+                if (solve(board)) return true;
+                board[row][col] = '.';
+              }
+            }
+            return false;
+          }
+        }
+      }
+      return true;
+    }
+
+    function solveSudoku() {
+      const board = getBoard();
+      if (solve(board)) {
+        setBoard(board);
+        alert("Solved!");
+      } else {
+        alert("No solution found.");
+      }
+    }
+
+    function clearGrid() {
+      for (let i = 0; i < SIZE; i++) {
+        for (let j = 0; j < SIZE; j++) {
+          const cell = document.getElementById(`cell-${i}-${j}`);
+          cell.value = '';
+          cell.disabled = false;
+          cell.classList.remove("generated-cell");
+        }
+      }
+    }
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    function generateFullBoard() {
+      const board = Array.from({ length: SIZE }, () => Array(SIZE).fill('.'));
+      function fill(row = 0, col = 0) {
+        if (row === SIZE) return true;
+        if (col === SIZE) return fill(row + 1, 0);
+        let symbols = [...SYMBOLS];
+        shuffle(symbols);
+        for (let ch of symbols) {
+          if (isValid(board, row, col, ch)) {
+            board[row][col] = ch;
+            if (fill(row, col + 1)) return true;
+            board[row][col] = '.';
+          }
+        }
+        return false;
+      }
+      fill();
+      return board;
+    }
+
+    function removeCells(board, difficulty) {
+      const clues = difficulty === "easy" ? 200 : difficulty === "medium" ? 160 : 120;
+      let cellsToRemove = SIZE * SIZE - clues;
+      const puzzle = board.map(row => [...row]);
+      while (cellsToRemove > 0) {
+        const row = Math.floor(Math.random() * SIZE);
+        const col = Math.floor(Math.random() * SIZE);
+        if (puzzle[row][col] !== '.') {
+          puzzle[row][col] = '.';
+          cellsToRemove--;
+        }
+      }
+      return puzzle;
+    }
+
+    function generateSudoku() {
+      const difficulty = document.getElementById("difficulty").value;
+      const full = generateFullBoard();
+      const puzzle = removeCells(full, difficulty);
+      setBoard(puzzle, true);
+    }
+
+    window.onload = createSudokuGrid;
+  </script>
+</body>
+</html>
