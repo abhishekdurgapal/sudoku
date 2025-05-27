@@ -11,6 +11,7 @@
       text-align: center;
       padding: 20px;
     }
+
     h1 {
       color: #333;
     }
@@ -32,8 +33,10 @@
       height: 35px;
       text-align: center;
       padding: 0;
+      background: #fff;
     }
 
+    /* Bold lines for 4x4 boxes */
     td:nth-child(4n) {
       border-right: 2px solid black;
     }
@@ -50,6 +53,7 @@
       border: none;
       outline: none;
       text-transform: uppercase;
+      background-color: transparent;
     }
 
     input:focus {
@@ -76,12 +80,17 @@
       font-weight: bold;
       background-color: #eef6ff;
     }
+    .solved-cell{
+        background-color:#e6f9e6;
+        color:#333;
+    }
 
     @media (max-width: 768px) {
       td {
         width: 25px;
         height: 25px;
       }
+
       input[type="text"] {
         font-size: 14px;
       }
@@ -90,12 +99,12 @@
 </head>
 <body>
   <h1>16x16 Sudoku Solver & Generator</h1>
-  
+
   <div class="board-wrapper">
     <table id="sudoku-board"></table>
   </div>
 
-  <div style="margin-bottom: 20px;">
+  <div>
     <label for="difficulty"><strong>Difficulty:</strong></label>
     <select id="difficulty" class="btn" style="width: auto;">
       <option value="easy">Easy</option>
@@ -156,8 +165,14 @@
             cell.disabled = false;
           } else {
             cell.value = board[i][j];
-            cell.classList.toggle("generated-cell", generated);
-            cell.disabled = generated;
+            if (generated) {
+              cell.classList.add("generated-cell");
+              cell.classList.remove("solved-cell");
+              cell.disabled = true;
+            } else if (!cell.classList.contains("generated-cell")) {
+            cell.classList.add("solved-cell");
+            }
+
           }
         }
       }
@@ -267,7 +282,7 @@
       setBoard(puzzle, true);
     }
 
-    window.onload = createSudokuGrid;
+    document.addEventListener("DOMContentLoaded", createSudokuGrid);
   </script>
 </body>
 </html>
